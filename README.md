@@ -16,7 +16,7 @@ Lib文件夹放的是Direct3D的相关头文件。是从安装DXSDK_Jun10.exe的
 
 cmake .. -G "Visual Studio 17 2022" -A Win32
 
-然后在build中就能看到Demo.sln文件，打开编译运行即可。
+然后在build中就能看到Demo.sln文件，设置Demo项目为启动项目，打开编译运行即可。
 ```
 D:\srccode\direct3ddemo\CreateDevice\build>cmake .. -G "Visual Studio 17 2022" -A Win32
 CMake Deprecation Warning at CMakeLists.txt:2 (cmake_minimum_required):
@@ -46,3 +46,13 @@ CMake Deprecation Warning at CMakeLists.txt:2 (cmake_minimum_required):
 
 D:\srccode\direct3ddemo\CreateDevice\build>
 ```
+
+# Direct3d9渲染管线
+
+![Image Direct3d9渲染管线](./images/blockdiag-graphics.png)
+
+|Pipeline Component|Description|Related Topics|
+|:--|:--|:--|
+|Vertex Data|Untransformed model vertices are stored in vertex memory buffers.|[Vertex Buffers (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/vertex-buffers) ,[IDirect3DVertexBuffer9](https://learn.microsoft.com/en-us/windows/win32/api/d3d9helper/nn-d3d9helper-idirect3dvertexbuffer9)|
+|Primitive Data	|Geometric primitives, including points, lines, triangles, and polygons, are referenced in the vertex data with index buffers.|[Index Buffers (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/index-buffers),[IDirect3DIndexBuffer9](https://learn.microsoft.com/en-us/windows/desktop/api), [Primitives](https://learn.microsoft.com/en-us/windows/win32/direct3d9/primitives), [Higher-Order Primitives (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/higher-order-primitives)|
+|Tessellation|The tesselator unit converts higher-order primitives, displacement maps, and mesh patches to vertex locations and stores those locations in vertex buffers.|[Tessellation (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/tessellation)|
