@@ -75,6 +75,67 @@ The IDirect3D9 interface supports enumeration of active display adapters and all
 
 D3D_SDK_VERSION is passed to this function to ensure that the header files against which an application is compiled match the version of the runtime DLL's that are installed on the machine. D3D_SDK_VERSION is only changed in the runtime when a header change (or other code change) would require an application to be rebuilt. If this function fails, it indicates that the header file version does not match the runtime DLL version.
 
+## CreateDevice
+[CreateDevice](https://learn.microsoft.com/en-us/windows/win32/api/d3d9/nf-d3d9-idirect3d9-createdevice). Creates a device to represent the display adapter.
+```C++
+HRESULT CreateDevice(
+  [in]          UINT                  Adapter,
+  [in]          D3DDEVTYPE            DeviceType,
+  [in]          HWND                  hFocusWindow,
+  [in]          DWORD                 BehaviorFlags,
+  [in, out]     D3DPRESENT_PARAMETERS *pPresentationParameters,
+  [out, retval] IDirect3DDevice9      **ppReturnedDeviceInterface
+);
+```
+### [in]          UINT                  Adapter
+Type: UINT
+
+Ordinal number that denotes the display adapter. D3DADAPTER_DEFAULT is always the primary display adapter.
+### [in]          D3DDEVTYPE            DeviceType
+Type: D3DDEVTYPE
+
+Member of the [D3DDEVTYPE](https://learn.microsoft.com/en-us/windows/win32/direct3d9/d3ddevtype) enumerated type that denotes the desired device type. If the desired device type is not available, the method will fail.
+```C++
+typedef enum D3DDEVTYPE { 
+  D3DDEVTYPE_HAL          = 1,
+  D3DDEVTYPE_NULLREF      = 4,
+  D3DDEVTYPE_REF          = 2,
+  D3DDEVTYPE_SW           = 3,
+  D3DDEVTYPE_FORCE_DWORD  = 0xffffffff
+} D3DDEVTYPE, *LPD3DDEVTYPE;
+```
+### [in]          HWND                  hFocusWindow
+The focus window alerts Direct3D when an application switches from foreground mode to background mode. See Remarks.
+
+- For full-screen mode, the window specified must be a top-level window.
+- For windowed mode, this parameter may be NULL only if the hDeviceWindow member of pPresentationParameters is set to a valid, non-NULL value.
+
+### [in]          DWORD                 BehaviorFlags
+
+Combination of one or more options that control device creation. For more information, see [D3DCREATE](https://learn.microsoft.com/en-us/windows/desktop/direct3d9/d3dcreate).
+
+### [in, out]     D3DPRESENT_PARAMETERS *pPresentationParameters
+Pointer to a [D3DPRESENT_PARAMETERS](https://learn.microsoft.com/en-us/windows/desktop/direct3d9/d3dpresent-parameters) structure, describing the presentation parameters for the device to be created. If BehaviorFlags specifies D3DCREATE_ADAPTERGROUP_DEVICE, pPresentationParameters is an array. Regardless of the number of heads that exist, only one depth/stencil surface is automatically created.
+```C++
+typedef struct D3DPRESENT_PARAMETERS {
+  UINT                BackBufferWidth;
+  UINT                BackBufferHeight;
+  D3DFORMAT           BackBufferFormat;
+  UINT                BackBufferCount;
+  D3DMULTISAMPLE_TYPE MultiSampleType;
+  DWORD               MultiSampleQuality;
+  D3DSWAPEFFECT       SwapEffect;
+  HWND                hDeviceWindow;
+  BOOL                Windowed;
+  BOOL                EnableAutoDepthStencil;
+  D3DFORMAT           AutoDepthStencilFormat;
+  DWORD               Flags;
+  UINT                FullScreen_RefreshRateInHz;
+  UINT                PresentationInterval;
+} D3DPRESENT_PARAMETERS, *LPD3DPRESENT_PARAMETERS;
+```
+
+
 # Direct3d9渲染管线
 
 ![Image Direct3d9渲染管线](./images/blockdiag-graphics.png)
