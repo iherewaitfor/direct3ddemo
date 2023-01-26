@@ -47,6 +47,34 @@ CMake Deprecation Warning at CMakeLists.txt:2 (cmake_minimum_required):
 D:\srccode\direct3ddemo\CreateDevice\build>
 ```
 
+## Direct3DCreate9
+[Direct3DCreate9](https://learn.microsoft.com/en-us/windows/win32/api/d3d9/nf-d3d9-direct3dcreate9)
+```C++
+IDirect3D9 * Direct3DCreate9(
+  UINT SDKVersion
+);
+```
+SDKVersion
+
+Type: UINT
+
+The value of this parameter should be D3D_SDK_VERSION.
+
+If successful, this function returns a pointer to an IDirect3D9 interface; otherwise, a NULL pointer is returned.
+
+The Direct3D object is the first Direct3D COM object that your graphical application needs to create and the last object that your application needs to release. Functions for enumerating and retrieving capabilities of a device are accessible through the Direct3D object. This enables applications to select devices without creating them.
+
+Create an IDirect3D9 object as shown here:
+```C++
+LPDIRECT3D9 g_pD3D = NULL;
+    
+if( NULL == (g_pD3D = Direct3DCreate9(D3D_SDK_VERSION)))
+    return E_FAIL;
+```
+The IDirect3D9 interface supports enumeration of active display adapters and allows the creation of [IDirect3DDevice9](https://learn.microsoft.com/en-us/windows/desktop/api/d3d9helper/nn-d3d9helper-idirect3ddevice9) objects. If the user dynamically adds adapters (either by adding devices to the desktop, or by hot-docking a laptop), those devices will not be included in the enumeration. Creating a new IDirect3D9 interface will expose the new devices.
+
+D3D_SDK_VERSION is passed to this function to ensure that the header files against which an application is compiled match the version of the runtime DLL's that are installed on the machine. D3D_SDK_VERSION is only changed in the runtime when a header change (or other code change) would require an application to be rebuilt. If this function fails, it indicates that the header file version does not match the runtime DLL version.
+
 # Direct3d9渲染管线
 
 ![Image Direct3d9渲染管线](./images/blockdiag-graphics.png)
