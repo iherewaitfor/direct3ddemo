@@ -151,3 +151,76 @@ typedef struct D3DPRESENT_PARAMETERS {
 |Texture Sampler|Texture level-of-detail filtering is applied to input texture values.|[Direct3D Textures (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/direct3d-textures)|
 |Pixel Processing|Pixel shader operations use geometry data to modify input vertex and texture data, yielding output pixel color values.|[Pixel Pipeline (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/pixel-pipeline)|
 |Pixel Rendering|Final rendering processes modify pixel color values with alpha, depth, or stencil testing, or by applying alpha blending or fog. All resulting pixel values are presented to the output display.|[Pixel Pipeline (Direct3D 9)](https://learn.microsoft.com/en-us/windows/win32/direct3d9/pixel-pipeline)|
+
+
+# Vertices Demo
+该示例使用3个顶点渲染一个三角形。Direct3D对象是使用顶点描述的，顶点是存储在顶点缓存（vetex buffer)中。顶点有很多种格式。本示例中使用的顶级格式如下：
+```C++
+struct CUSTOMVERTEX
+{
+    FLOAT x, y, z, rhw; // The transformed position for the vertex.
+    DWORD color;        // The vertex color.
+};
+
+```
+自定义灵活顶点格式custom flexible vertex format (FVF).
+```
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZRHW|D3DFVF_DIFFUSE)
+``` 
+
+## 创建和填充顶点缓存
+填充的顶点缓存的内容
+```C++
+CUSTOMVERTEX vertices[] =
+{
+    { 150.0f,  50.0f, 0.5f, 1.0f, 0xffff0000, }, // x, y, z, rhw, color
+    { 250.0f, 250.0f, 0.5f, 1.0f, 0xff00ff00, },
+    {  50.0f, 250.0f, 0.5f, 1.0f, 0xff00ffff, },
+};
+
+```
+
+创建顶点缓存。需要指定创建缓存的大小，格式。
+```C++
+LPDIRECT3DVERTEXBUFFER9 g_pVB = NULL; // Buffer to hold Vertices
+if( FAILED( g_pd3dDevice->CreateVertexBuffer( 3*sizeof(CUSTOMVERTEX),
+         0 /*Usage*/, D3DFVF_CUSTOMVERTEX, D3DPOOL_DEFAULT, &g_pVB, NULL ) ) )
+    return E_FAIL;
+```
+填充顶点缓存。先锁定顶点缓存，得到缓存的操作指针。再往缓存内写入内存。写完后，再解除锁定。
+```C++
+VOID* pVertices;
+if( FAILED( g_pVB->Lock( 0, sizeof(vertices), (void**)&pVertices, 0 ) ) )
+    return E_FAIL;
+
+memcpy( pVertices, vertices, sizeof(vertices) );
+
+g_pVB->Unlock();
+
+```
+
+## 渲染
+先擦除画布。开始场景。
+```C++
+g_pd3dDevice->Clear( 0, NULL, D3DCLEAR_TARGET, D3DCOLOR_XRGB(0,0,255), 1.0f, 0L );
+g_pd3dDevice->BeginScene();
+
+```
+设置顶点源。
+```C++
+g_pd3dDevice->SetStreamSource( 0, g_pVB, 0, sizeof(CUSTOMVERTEX) );
+```
+设置灵活顶点格式
+```C++
+g_pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+```
+画多少个三角形。
+```C++
+g_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLELIST, 0, 1 );
+
+```
+结束场景，并渲染。
+```C++
+g_pd3dDevice->EndScene();
+g_pd3dDevice->Present( NULL, NULL, NULL, NULL );
+```
