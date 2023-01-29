@@ -99,9 +99,9 @@ HRESULT InitGeometry()
     // Initialize three vertices for rendering a triangle
     CUSTOMVERTEX g_Vertices[] =
     {
-        { -1.0f,-1.0f, 0.0f, 0xffff0000, },
-        {  1.0f,-1.0f, 0.0f, 0xff0000ff, },
-        {  0.0f, 1.0f, 0.0f, 0xffffffff, },
+        { -1.0f,-1.0f, 0.0f, 0xffff0000, },//ARGB.red
+        {  1.0f,-1.0f, 0.0f, 0xff0000ff, },//ARGB.blue
+        {  0.0f, 1.0f, 0.0f, 0xffffffff, },//ARGB.white
     };
 
     // Create the vertex buffer.
