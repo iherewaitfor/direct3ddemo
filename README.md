@@ -287,3 +287,82 @@ D3DXMATRIX* WINAPI D3DXMatrixPerspectiveFovLH
 各参数含义：
 
 ![Image 视锥参数](./images/fovdiag.png)
+
+# Textures Demos纹理映射
+## 自定义顶点格式
+其中tu、tv为纹理坐标。纹理坐标的取值范围是[0.0,1.0]。其中(0,0)表示纹理的左上角。(1.0,1.0)表示纹理的右下角。将一张纹理贴到对应的表面，需要给各顶点对应的tu、tv赋对应的纹理坐标值。
+```C++
+// A structure for our custom vertex type. Texture coordinates were added.
+struct CUSTOMVERTEX
+{
+    D3DXVECTOR3 position; // The position
+    D3DCOLOR    color;    // The color
+#ifndef SHOW_HOW_TO_USE_TCI
+    FLOAT       tu, tv;   // The texture coordinates
+#endif
+};
+
+// Custom flexible vertex format (FVF), which describes custom vertex structure
+#ifdef SHOW_HOW_TO_USE_TCI
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE)
+#else
+#define D3DFVF_CUSTOMVERTEX (D3DFVF_XYZ|D3DFVF_DIFFUSE|D3DFVF_TEX1)
+#endif
+
+```
+## 初始化几何模型
+该示例将一个纹理贴到圆柱体上。需要创建纹理。构建圆柱体，生成各个顶点（由N个三角形组成圆柱体），并给各个顶点的纹理坐标赋值。
+### 生成纹理
+本示例中，直接从文件生成纹理。D3DXCreateTextureFromFile。
+```C++
+if( FAILED( D3DXCreateTextureFromFile( g_pd3dDevice, "Banana.bmp",
+&g_pTexture ) ) )
+return E_FAIL;
+
+```
+### 生成圆柱体
+圆一圈角度为2PI，本例中圆柱的上下两个圆，都将使用50个点画一圈，其中起点和终点位置一样，但纹理坐标不一样。起点tu是0，终点tu是1.
+```C++
+for( DWORD i=0; i<50; i++ )
+{
+    FLOAT theta = (2*D3DX_PI*i)/(50-1);
+
+        pVertices[2*i+0].position = D3DXVECTOR3( sinf(theta),-1.0f, cosf(theta) );
+        pVertices[2*i+0].color    = 0xffffffff;
+#ifndef SHOW_HOW_TO_USE_TCI
+        pVertices[2*i+0].tu       = ((FLOAT)i)/(50-1);
+        pVertices[2*i+0].tv       = 1.0f;
+#endif
+
+        pVertices[2*i+1].position = D3DXVECTOR3( sinf(theta), 1.0f, cosf(theta) );
+        pVertices[2*i+1].color    = 0xff808080;
+#ifndef SHOW_HOW_TO_USE_TCI
+        pVertices[2*i+1].tu       = ((FLOAT)i)/(50-1);
+        pVertices[2*i+1].tv       = 0.0f;
+#endif
+}
+
+```
+### 渲染纹理
+
+D3D9最多支持8个纹理阶段，第一个参数取值从0到7。该示例中，只有一个纹理，设置0.
+
+```C++
+        // which govern how Textures get blended together (in the case of multiple
+        // Textures) and lighting information. In this case, we are modulating
+        // (blending) our texture with the diffuse color of the vertices.
+        g_pd3dDevice->SetTexture( 0, g_pTexture );
+        g_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLOROP, D3DTOP_MODULATE );
+        g_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG1, D3DTA_TEXTURE );
+        g_pd3dDevice->SetTextureStageState( 0, D3DTSS_COLORARG2, D3DTA_DIFFUSE );
+        g_pd3dDevice->SetTextureStageState( 0, D3DTSS_ALPHAOP, D3DTOP_DISABLE );
+```
+
+D3DPT_TRIANGLESTRIP表示三角形带。每个图元是三角形，需要3个顶点。每个三角形和相邻的的三角形共用顶点，组成新的三角。这样会将所有顶点连在一起。就是三角形带。
+```C++
+        // Render the vertex buffer contents
+        g_pd3dDevice->SetStreamSource( 0, g_pVB, 0, sizeof( CUSTOMVERTEX ) );
+        g_pd3dDevice->SetFVF( D3DFVF_CUSTOMVERTEX );
+        g_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2 );
+```
+
