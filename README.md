@@ -482,8 +482,76 @@ IDirect3DPixelShader9* MultiTexPS = 0;
 		Device->BeginScene();
 		Device->SetPixelShader(MultiTexPS);
 ```
+
+像素着色器使用步骤：
+
+ 程序中像素着色器的使用和之前顶点着色器的使用无二，只是设置着色器中纹理采样器变量Samp0、Samp1和设定着色器其他变量稍有不同：
+
+    1. 首先通过变量名称得到变量句柄：
+```
+	// 
+	// Get Handles
+	//
+
+	YTexHandle      = MultiTexCT->GetConstantByName(0, "YTex");
+	UTexHandle		= MultiTexCT->GetConstantByName(0, "UTex");
+	VTexHandle		= MultiTexCT->GetConstantByName(0, "VTex");
+```
+
+    2. 然后通过句柄得到对变量的描述：
+```C++
+	//
+	// Set constant descriptions:
+	//
+
+	UINT count;
+
+	MultiTexCT->GetConstantDesc(YTexHandle,      &YTexDesc, &count);
+	MultiTexCT->GetConstantDesc(UTexHandle, &UTexDesc, &count);
+	MultiTexCT->GetConstantDesc(VTexHandle,    &VTexDesc, &count);
+
+```
+
+    3.最后通过SetTexture配合所得到的描述信息设置纹理：
+
+```C++
+		// Y tex
+		Device->SetTexture(     YTexDesc.RegisterIndex, YTex);
+		Device->SetSamplerState(YTexDesc.RegisterIndex, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(YTexDesc.RegisterIndex, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(YTexDesc.RegisterIndex, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(YTexDesc.RegisterIndex, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
+		Device->SetSamplerState(YTexDesc.RegisterIndex, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
+
+		// U tex
+		Device->SetTexture(     UTexDesc.RegisterIndex, UTex);
+		Device->SetSamplerState(UTexDesc.RegisterIndex, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(UTexDesc.RegisterIndex, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(UTexDesc.RegisterIndex, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(UTexDesc.RegisterIndex, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
+		Device->SetSamplerState(UTexDesc.RegisterIndex, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
+
+		// string tex
+		Device->SetTexture(     VTexDesc.RegisterIndex, VTex);
+		Device->SetSamplerState(VTexDesc.RegisterIndex, D3DSAMP_MAGFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(VTexDesc.RegisterIndex, D3DSAMP_MINFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(VTexDesc.RegisterIndex, D3DSAMP_MIPFILTER, D3DTEXF_LINEAR);
+		Device->SetSamplerState(VTexDesc.RegisterIndex, D3DSAMP_ADDRESSU, D3DTADDRESS_BORDER);
+		Device->SetSamplerState(VTexDesc.RegisterIndex, D3DSAMP_ADDRESSV, D3DTADDRESS_BORDER);
+```
 ## 创建YUV纹理
-创建YUV纹理。未填充内容 。
+创建YUV纹理。未填充内容 。若视频大小为WidthXHeight，YUV420格式中，Y大小为WdithXHeidht, U和V大小均为(Width/2) \*(Hdight/2)，即Width\*Height/4.所以每一帧大小，相对于RGB格式（若为8位）的的WidthxHeight\*3Byte，YUV格式的大小仅为Y:Width\*Height*1Byte, U和V都是:Wdith/2\*Heidht/2\*1Byte，即WidthxHeight\*3/2Byte,仅为RGB的一半大小。
+
+各格式yuv的空间与rgb相比的如下：
+
+- Yuv444 和rgb占的空间一样大。
+
+- Yuv422  = y + u+ v = y + y/2 + y/2 = 2y,比rgb小1/3
+
+- Yuv420  = y + u + v = y + y/2/2 + y /2/2 = 1.5y ,比rgb 小1/2
+
+- Yuv411 = y + u + v = y +  1/4y + 1/4y = 1.5y ,比rgb 小1/2
+
 ```C++
 IDirect3DTexture9* YTex      = 0;
 IDirect3DTexture9* UTex = 0;
@@ -496,4 +564,64 @@ IDirect3DTexture9* VTex    = 0;
 	Device->CreateTexture ( Width / 2, Height / 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_L8, D3DPOOL_DEFAULT, &UTex, NULL ) ;
 	Device->CreateTexture ( Width / 2, Height / 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_L8, D3DPOOL_DEFAULT, &VTex, NULL ) ;
 ```
-##
+
+从文件中读取yuv数据到内存。分别准备好Y、U、V的内存数据指针。
+```C++
+//YUV file
+FILE *infile = NULL;
+unsigned char buf[Width*Height*3/2];
+unsigned char *plane[3];
+infile=fopen("test_yuv420p_320x180.yuv", "rb"))
+fread(buf, 1, Width*Height*3/2, infile)
+
+plane[0] = buf;  //Y
+plane[1] = plane[0] + Width*Height; //U
+plane[2] = plane[1] + Width*Height/4; //V
+```
+将内存中的数据填充到yuv纹理。
+```C++
+D3DLOCKED_RECT d3d_rect;
+		byte *pSrc = buf;
+		//Locks a rectangle on a texture resource.
+		//And then we can manipulate pixel data in it.
+		LRESULT lRet = YTex->LockRect(0, &d3d_rect, 0, 0);
+		if (FAILED(lRet)){
+			return false;
+		}
+		// Copy pixel data to texture
+		byte *pDest = (byte *)d3d_rect.pBits;
+		int stride = d3d_rect.Pitch; 
+		for(int i = 0;i < Height;i ++){
+			memcpy(pDest + i * stride,plane[0] + i * Width, Width);
+		}
+
+		YTex->UnlockRect(0);
+
+		D3DLOCKED_RECT d3d_rect1;
+		lRet = UTex->LockRect(0, &d3d_rect1, 0, 0);
+		if (FAILED(lRet)){
+			return false;
+		}
+		// Copy pixel data to texture
+		byte *pDest1 = (byte *)d3d_rect1.pBits;
+		int stride1 = d3d_rect1.Pitch; 
+		for(int i = 0;i < Height/2;i ++){
+			memcpy(pDest1 + i * stride1,plane[1] + i * Width / 2, Width / 2);
+		}
+
+		UTex->UnlockRect(0);
+
+		D3DLOCKED_RECT d3d_rect2;
+		lRet =  VTex->LockRect(0, &d3d_rect2, 0, 0);
+		if (FAILED(lRet)){
+			return false;
+		}
+		// Copy pixel data to texture
+		byte *pDest2 = (byte *)d3d_rect2.pBits;
+		int stride2 = d3d_rect2.Pitch; 
+		for(int i = 0;i < Height/2;i ++){
+			memcpy(pDest2 + i * stride2,plane[2] + i * Width / 2, Width / 2);
+		}
+
+		VTex->UnlockRect(0);
+```
