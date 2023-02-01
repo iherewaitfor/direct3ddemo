@@ -115,7 +115,7 @@ HRESULT InitGeometry()
         // If texture is not in current folder, try parent folder
         if (FAILED(D3DXCreateTextureFromFile(g_pd3dDevice, L"..\\frustum.png", &g_pTexture)))
         {
-            MessageBox(NULL, L"Could not find banana.bmp", L"Textures.exe", MB_OK);
+            MessageBox(NULL, L"Could not find frustum.png", L"Textures.exe", MB_OK);
             return E_FAIL;
         }
     }
