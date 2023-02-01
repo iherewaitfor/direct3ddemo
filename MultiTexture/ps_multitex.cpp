@@ -93,13 +93,13 @@ bool Setup()
 	MultiTexVertex* v = 0;
 	QuadVB->Lock(0, 0, (void**)&v, 0);
 
-	v[0] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-	v[1] = MultiTexVertex(-10.0f,  10.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	v[2] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
+	v[0] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);//左下。顺时针
+	v[1] = MultiTexVertex(-10.0f,  10.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);//左上
+	v[2] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);//右上
 
-	v[3] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);
-	v[4] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);
-	v[5] = MultiTexVertex( 10.0f, -10.0f, 5.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);
+	v[3] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);//左下，顺时针
+	v[4] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);//右上
+	v[5] = MultiTexVertex( 10.0f, -10.0f, 5.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);//右下
 
 	QuadVB->Unlock();
 
@@ -216,10 +216,13 @@ void Cleanup()
 
 bool Display(float timeDelta)
 {
+	static int framecount = 0;
+	framecount++;
 	if (fread(buf, 1, Width*Height*3/2, infile) != Width*Height*3/2){
 		// Loop
 		fseek(infile, 0, SEEK_SET);
 		fread(buf, 1, Width*Height*3/2, infile);
+		framecount = 1; //重新开始计算帧数
 	}
 
 	if( buf != NULL && Device )
@@ -257,9 +260,9 @@ bool Display(float timeDelta)
 
 		Device->Clear(0, 0, D3DCLEAR_TARGET | D3DCLEAR_ZBUFFER, 0xffffffff, 1.0f, 0);
 
-		plane[0] = buf;
-		plane[1] = plane[0] + Width*Height;
-		plane[2] = plane[1] + Width*Height/4;
+		plane[0] = buf;  //Y
+		plane[1] = plane[0] + Width*Height; //U
+		plane[2] = plane[1] + Width*Height/4; //V
 
 		D3DLOCKED_RECT d3d_rect;
 		byte *pSrc = buf;

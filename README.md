@@ -366,3 +366,134 @@ D3DPT_TRIANGLESTRIP表示三角形带。每个图元是三角形，需要3个顶
         g_pd3dDevice->DrawPrimitive( D3DPT_TRIANGLESTRIP, 0, 2 * 50 - 2 );
 ```
 
+# MultiTexture
+使用三层纹理渲染yuv。通过shader转rgb。
+## 定义顶点格式，带三层纹理坐标
+顶点格式为带三层纹理坐标。注意定义FVF时，使用了D3DFVF_TEX3。表示有三层纹理。
+```C++
+struct MultiTexVertex
+{
+	MultiTexVertex(float x, float y, float z,
+		float u0, float v0,
+		float u1, float v1,
+		float u2, float v2)
+	{
+		 _x =  x;  _y =  y; _z = z;
+		_u0 = u0; _v0 = v0; 
+		_u1 = u1; _v1 = v1;
+		_u2 = u2, _v2 = v2;
+	}
+
+	float _x, _y, _z;
+	float _u0, _v0;
+	float _u1, _v1;
+	float _u2, _v2;
+
+	static const DWORD FVF;
+};
+const DWORD MultiTexVertex::FVF = D3DFVF_XYZ | D3DFVF_TEX3; 
+```
+创建顶点缓存,并写入各个缓存的顶点信息。创建了两个三角形组成一个矩形，用于贴纹理。
+
+```C++
+	//
+	// Create geometry.
+	//
+
+	Device->CreateVertexBuffer(
+		6 * sizeof(MultiTexVertex), 
+		D3DUSAGE_WRITEONLY,
+		MultiTexVertex::FVF,
+		D3DPOOL_MANAGED,
+		&QuadVB,
+		0);
+
+	MultiTexVertex* v = 0;
+	QuadVB->Lock(0, 0, (void**)&v, 0);
+
+	v[0] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);//左下。顺时针
+	v[1] = MultiTexVertex(-10.0f,  10.0f, 5.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);//左上
+	v[2] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);//右上
+
+	v[3] = MultiTexVertex(-10.0f, -10.0f, 5.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);//左下，顺时针
+	v[4] = MultiTexVertex( 10.0f,  10.0f, 5.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f);//右上
+	v[5] = MultiTexVertex( 10.0f, -10.0f, 5.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f);//右下
+
+	QuadVB->Unlock();
+```
+## 编译shader
+准备Shader源码。功能为将yuv转换成rgb.
+```
+sampler YTex;
+sampler UTex;
+sampler VTex;
+
+
+struct PS_INPUT
+{
+    float2 y	: TEXCOORD0;
+    float2 u	: TEXCOORD1;
+    float2 v	: TEXCOORD2;
+};
+
+
+float4 Main(PS_INPUT input):COLOR0
+{	  
+    float y = tex2D(YTex,input.y).r;
+    float u = tex2D(UTex, input.u.xy).r  - 0.5f;
+    float v = tex2D(VTex,input.v.xy).r  - 0.5f;			
+				
+    float r = y + 1.14f * v;
+    float g = y - 0.394f * u - 0.581f * v;
+    float b = y + 2.03f * u;
+				
+    return float4(r,g,b, 1);
+}
+```
+```C++
+	ID3DXBuffer* shader      = 0;
+	ID3DXBuffer* errorBuffer = 0;
+
+	hr = D3DXCompileShaderFromFile(
+		"ps_multitex.txt",
+		0,
+		0,
+		"Main", // entry point function name
+		"ps_2_0",
+		D3DXSHADER_DEBUG | D3DXSHADER_ENABLE_BACKWARDS_COMPATIBILITY,
+		&shader,
+		&errorBuffer,
+		&MultiTexCT);
+```
+通过编译好的shader创建Pixel Shader
+```c++
+IDirect3DPixelShader9* MultiTexPS = 0;
+
+	//
+	// Create Pixel Shader
+	//
+	hr = Device->CreatePixelShader(
+		(DWORD*)shader->GetBufferPointer(),
+		&MultiTexPS);
+```
+
+在渲染前要设置SetPixelShader.
+```C++
+		Device->BeginScene();
+		Device->SetPixelShader(MultiTexPS);
+```
+## 创建YUV纹理
+创建YUV纹理。未填充内容 。
+```C++
+IDirect3DTexture9* YTex      = 0;
+IDirect3DTexture9* UTex = 0;
+IDirect3DTexture9* VTex    = 0;
+	//
+	// Create textures.
+	//
+
+	Device->CreateTexture ( Width, Height, 1, D3DUSAGE_DYNAMIC, D3DFMT_L8, D3DPOOL_DEFAULT, &YTex, NULL ) ;
+	Device->CreateTexture ( Width / 2, Height / 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_L8, D3DPOOL_DEFAULT, &UTex, NULL ) ;
+	Device->CreateTexture ( Width / 2, Height / 2, 1, D3DUSAGE_DYNAMIC, D3DFMT_L8, D3DPOOL_DEFAULT, &VTex, NULL ) ;
+```
+##
