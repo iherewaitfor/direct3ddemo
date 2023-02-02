@@ -227,6 +227,7 @@ g_pd3dDevice->Present( NULL, NULL, NULL, NULL );
 
 # Matrices Demo
 坐标系：Direct3D用的是左手系。下图的左边。
+
 ![Image 左右手坐标系统](./images/leftrght.png)
 
 ```C++
