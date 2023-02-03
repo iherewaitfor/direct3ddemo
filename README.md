@@ -579,7 +579,7 @@ plane[0] = buf;  //Y
 plane[1] = plane[0] + Width*Height; //U
 plane[2] = plane[1] + Width*Height/4; //V
 ```
-将内存中的数据填充到yuv纹理。
+将内存中的数据填充到y、u、v纹理。此处为逐行复制数据。若视频大小为Widht x Heidht，则Y大小与视频大小一样，U、V的宽为Width/2，高为Height/2。 
 ```C++
 	D3DLOCKED_RECT d3d_rect;
 	byte *pSrc = buf;
